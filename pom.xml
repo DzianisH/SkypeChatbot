@@ -1,0 +1,27 @@
+<project>
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>test-app</groupId>
+	<artifactId>test-app-art</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.samczsun</groupId>
+			<artifactId>skype4j</artifactId>
+			<version>0.1.5</version>
+		</dependency>
+	</dependencies>
+</project>

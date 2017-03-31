@@ -12,15 +12,16 @@ import com.samczsun.skype4j.exceptions.InvalidCredentialsException;
 import com.samczsun.skype4j.formatting.Message;
 import com.samczsun.skype4j.formatting.Text;
 
+import java.util.Arrays;
+import java.util.Random;
 import java.util.Scanner;
 
 /**
  * Created by Dzianis_Haurylavets on 31/08/2016.
  */
 public class Runner {
-    static {
 
-    }
+	private static Random random = new Random();
 
     public static void main(String[] args) throws ConnectionException, InvalidCredentialsException, ChatNotFoundException, InterruptedException {
         Scanner scanner = new Scanner(System.in);
@@ -79,10 +80,13 @@ public class Runner {
 
         System.out.println("BOT STARTED");
         Chat chat = skype.getOrLoadChat("19:6ed99fad28304c50a5110ef5a5c4ded7@thread.skype");
-        String messageText = "Hello World!";
+        String messageText = "";
         while(!"kill".equals(messageText)){
-            Message message = Message.fromHtml("<font color=\"0xee6622\" align=\"right\">" + messageText + "</font>");
-            chat.sendMessage(message);
+        	if(messageText.length() != 0) {
+				Message message = createMessage(messageText);
+				chat.sendMessage(message);
+
+			}
             messageText = scanner.nextLine();
             System.out.println("type kill to stop bot");
         }
@@ -90,4 +94,14 @@ public class Runner {
 
         skype.logout();
     }
+
+	private static Message createMessage(String messageText) {
+		String message = Arrays.stream(messageText.split(" "))
+				.map(String::trim)
+				.filter(str -> !str.isEmpty())
+				.map(word -> String.format("<font color=\"0x%h\" align=\"right\">%s</font> ", random.nextInt() & 0x00ffffff, word))
+				.reduce("<b>", String::concat) + "</b>";
+
+		return Message.fromHtml(message);
+	}
 }

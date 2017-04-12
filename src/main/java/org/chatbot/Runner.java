@@ -69,7 +69,7 @@ public class Runner {
 
 	private static void printAvailableContacts(Skype skype) throws ConnectionException, ChatNotFoundException {
 		System.out.println("Available groups: ");
-		skype.loadMoreChats(2).stream()
+		skype.loadMoreChats(50).stream()
 				.filter(ch -> ch instanceof ChatGroup)
 				.map(ch -> (ChatGroup) ch)
 				.forEach(chat1 -> {

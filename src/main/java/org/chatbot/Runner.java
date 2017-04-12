@@ -3,14 +3,12 @@ package org.chatbot;
 import com.samczsun.skype4j.Skype;
 import com.samczsun.skype4j.SkypeBuilder;
 import com.samczsun.skype4j.chat.Chat;
-import com.samczsun.skype4j.events.EventHandler;
-import com.samczsun.skype4j.events.Listener;
-import com.samczsun.skype4j.events.chat.message.MessageReceivedEvent;
 import com.samczsun.skype4j.exceptions.ChatNotFoundException;
 import com.samczsun.skype4j.exceptions.ConnectionException;
 import com.samczsun.skype4j.exceptions.InvalidCredentialsException;
 import com.samczsun.skype4j.formatting.Message;
-import com.samczsun.skype4j.formatting.Text;
+import com.samczsun.skype4j.internal.chat.ChatGroup;
+import com.samczsun.skype4j.user.Contact;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -26,82 +24,61 @@ public class Runner {
     public static void main(String[] args) throws ConnectionException, InvalidCredentialsException, ChatNotFoundException, InterruptedException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Type your login:");
-        final String login = scanner.nextLine().toLowerCase();
-        System.out.println("Enter your password:");
+        final String login = scanner.nextLine();
+		System.out.println("Enter your password:");
         final String password = scanner.nextLine();
+		System.out.printf("You type login: '%s' and password: '%s'.\n", login, password);
 
         final Skype skype = new SkypeBuilder(login, password).withAllResources().build();
         skype.login();
-        skype.getEventDispatcher().registerListener(new Listener() {
-            @EventHandler
-            public void onMessage(MessageReceivedEvent e) {
-                String message = e.getMessage().getContent().asPlaintext();
-                System.out.printf("Got message: '%s' in room '%s'\n", message, e.getMessage().getChat().getIdentity());
-                try {
-                    if(message != null) {
-                        final String msg = message.toLowerCase();
-                        final Chat chat = skype.getOrLoadChat(e.getMessage().getChat().getIdentity());
-                        //django
-                        if ("19:fd06b03bb2b34bb9b303b7966fb8c740@thread.skype".equals(e.getMessage().getChat().getIdentity())) {
-                            if (msg.contains("дима") || msg.contains("димка")) {
-                                chat.sendMessage(Message.create().with(Text.plain("Димка? да, да, помню, это тот самый непингуемый что ли?")));
-                            } else if (msg.contains("андрей") || msg.contains("андрос") || msg.contains("желез")) {
-                                chat.sendMessage(Message.create().with(Text.plain("Андрос? это тот пыхарь что ли?")));
-                            } else if(msg.contains("рыжий")){
-                                String senderName = e.getMessage().getSender().getUsername();
-                                chat.sendMessage(Message.fromHtml("<font color=\"0xee6622\" align=\"right\">                         "
-                                        + "<b>Дениска</b> слегка взгрустнул из-за последнего сообщения " + senderName
-                                        + ". Не обижайте Дениску ;c </font>"));
-                            }
-                        // Lenina group
-                        } else if ("19:6ed99fad28304c50a5110ef5a5c4ded7@thread.skype".equals(e.getMessage().getChat().getIdentity())) {
-                            if(msg.contains("рыжий") || msg.contains("денис")){
-                                String senderName = e.getMessage().getSender().getUsername();
-                                chat.sendMessage(Message.fromHtml("<font color=\"0xee6622\" align=\"right\">                         "
-                                        + "<b>Дениска</b> слегка взгрустнул из-за последнего сообщения " + senderName
-                                        + ". Не обижайте Дениску ;c </font>"));
-                            }
-                        }
-                    }
-                } catch (ConnectionException | ChatNotFoundException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        });
+        skype.subscribe();
 
-//        for(Contact contact : skype.getAllContacts()){
-//            System.out.println(contact.getFirstName() + " " + contact.getLastName());
-//            System.out.println(contact.getPrivateConversation().getIdentity());
-//        }
-//        Chat chat = skype.getOrLoadChat("8:dzmitry_balbosau");
-//        chat.sendMessage(Message.create().with(Text.plain("Я бот, я начал работу")));
-
-//        while(scanner.hasNext()) scanner.next();
+//        printAvailableContacts(skype);
 
         System.out.println("BOT STARTED");
-        Chat chat = skype.getOrLoadChat("19:6ed99fad28304c50a5110ef5a5c4ded7@thread.skype");
-        String messageText = "";
-        while(!"kill".equals(messageText)){
-        	if(messageText.length() != 0) {
+        Chat chat = skype.getOrLoadChat("8:alen0044ka");
+		startChat(scanner, chat);
+        System.out.println("BOT STOPPED");
+
+        scanner.close();
+        skype.logout();
+    }
+
+	private static void startChat(Scanner scanner, Chat chat) throws ConnectionException {
+		String messageText = "";
+		while(!"kill".equals(messageText)){
+			if(messageText.length() != 0) {
 				Message message = createMessage(messageText);
 				chat.sendMessage(message);
 
 			}
-            messageText = scanner.nextLine();
-            System.out.println("type kill to stop bot");
-        }
-        System.out.println("BOT STOPPED");
-
-        skype.logout();
-    }
+			messageText = scanner.nextLine();
+			System.out.println("type kill to stop bot");
+		}
+	}
 
 	private static Message createMessage(String messageText) {
 		String message = Arrays.stream(messageText.split(" "))
 				.map(String::trim)
 				.filter(str -> !str.isEmpty())
-				.map(word -> String.format("<font color=\"0x%h\" align=\"right\">%s</font> ", random.nextInt() & 0x00ffffff, word))
-				.reduce("<b>", String::concat) + "</b>";
+				.map(word -> String.format("<font color=\"0x%h\" align=\"right\"><b>%s</b></font> ", random.nextInt() & 0x00ffffff, word))
+				.reduce("", String::concat) + "";
 
 		return Message.fromHtml(message);
+	}
+
+	private static void printAvailableContacts(Skype skype) throws ConnectionException, ChatNotFoundException {
+		System.out.println("Available groups: ");
+		skype.loadMoreChats(2).stream()
+				.filter(ch -> ch instanceof ChatGroup)
+				.map(ch -> (ChatGroup) ch)
+				.forEach(chat1 -> {
+					System.out.println(") " + chat1.getTopic() + "  " + chat1.getIdentity() + "  " + chat1.isLoaded());
+				});
+
+		System.out.println("Available personal chats:");
+		for(Contact contact : skype.getAllContacts()){
+			System.out.println(contact.getFirstName() + " " + contact.getLastName() + " \t" + contact.getPrivateConversation().getIdentity());
+		}
 	}
 }
